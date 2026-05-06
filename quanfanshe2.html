@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光的折射与全反射 - 交互式动画</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', '苹方', sans-serif;
+            background: linear-gradient(135deg, #0c0c1d 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: rgba(20, 20, 40, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 1.8em;
+            background: linear-gradient(135deg, #64b5f6, #ce93d8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: #0a0a1a;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+        }
+
+        .controls {
+            background: rgba(30, 30, 50, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            color: #ccc;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #333, #555);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #64b5f6;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(100, 181, 246, 0.5);
+            transition: all 0.2s;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(100, 181, 246, 0.8);
+        }
+
+        .value-display {
+            display: inline-block;
+            background: #64b5f6;
+            color: #0a0a1a;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
+        .warning-display {
+            display: inline-block;
+            background: #ff5252;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 8px;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #64b5f6;
+            color: #0a0a1a;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(100, 181, 246, 0.5);
+        }
+
+        button.secondary {
+            background: #ce93d8;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 20px rgba(206, 147, 216, 0.5);
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, rgba(100, 181, 246, 0.2), rgba(206, 147, 216, 0.2));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ddd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.85em;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 8px;
+            font-size: 1em;
+            color: #64b5f6;
+        }
+
+        .info-panel p {
+            margin: 4px 0;
+            line-height: 1.4;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px;
+            border-radius: 5px;
+            margin: 4px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #ce93d8;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.85em;
+        }
+
+        .status-normal {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .status-tir {
+            background: rgba(255, 82, 82, 0.2);
+            border: 1px solid rgba(255, 82, 82, 0.5);
+            animation: glowPulse 1.5s infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 82, 82, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(255, 82, 82, 0.6); }
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💡 光的折射与全反射</h1>
+        <p class="subtitle">拖动滑块调节入射角和折射率，观察折射、全反射及倏逝波现象</p>
+        
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="mainCanvas"></canvas>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>
+                        📐 入射角 θᵢ: <span class="value-display" id="angleValue">45.0°</span>
+                    </label>
+                    <input type="range" id="incidentAngle" min="0" max="90" value="45" step="0.5">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        🔮 上方折射率 n₁: <span class="value-display" id="n1Value">1.00</span>
+                    </label>
+                    <input type="range" id="n1" min="1.0" max="3.0" value="1.0" step="0.01">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        💎 下方折射率 n₂: <span class="value-display" id="n2Value">1.50</span>
+                    </label>
+                    <input type="range" id="n2" min="1.0" max="3.0" value="1.5" step="0.01">
+                </div>
+
+                <div id="statusContainer" class="status-indicator status-normal">
+                    <span id="statusIcon">✅</span>
+                    <span id="statusText">正常折射</span>
+                </div>
+
+                <div id="criticalInfo" style="color: #aaa; font-size: 0.85em; margin-top: 5px; display: none;">
+                    临界角 θc = <span id="criticalAngle">--</span>
+                </div>
+
+                <div class="button-group">
+                    <button onclick="resetParameters()">🔄 重置参数</button>
+                    <button class="secondary" onclick="downloadImage()">💾 保存图片</button>
+                </div>
+
+                <div class="info-panel">
+                    <h3>📖 折射定律与全反射</h3>
+                    <p><strong>斯涅尔定律：</strong></p>
+                    <div class="formula">n₁ sinθᵢ = n₂ sinθₜ</div>
+                    <p><strong>临界角：</strong></p>
+                    <div class="formula">θc = arcsin(n₂/n₁), n₁ > n₂</div>
+                    <p><strong>倏逝波：</strong></p>
+                    <div class="formula">E(z) = E₀ e^(-κz)</div>
+                    <div class="formula">κ = (2π/λ)√(n₁²sin²θᵢ - n₂²)</div>
+                    <p style="margin-top:8px; font-size:0.82em; color:#aaa;">
+                        💡 全反射时产生倏逝波<br>
+                        💡 倏逝波在界面下方指数衰减<br>
+                        💡 穿透深度约波长量级
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            canvas.width = width;
+            canvas.height = Math.max(width * 0.75, 550);
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+
+        // 计算折射角
+        function getRefractionAngle(theta1, n1, n2) {
+            const sinTheta1 = Math.sin(theta1);
+            const sinTheta2 = (n1 / n2) * sinTheta1;
+            if (sinTheta2 > 1) {
+                return null; // 全反射
+            }
+            return Math.asin(sinTheta2);
+        }
+
+        // 计算临界角
+        function getCriticalAngle(n1, n2) {
+            if (n1 <= n2) return null;
+            return Math.asin(n2 / n1);
+        }
+
+        // 计算倏逝波衰减常数
+        function getEvanescentDecay(theta1, n1, n2, wavelength) {
+            const sinTheta1 = Math.sin(theta1);
+            const k0 = 2 * Math.PI / wavelength;
+            const kappa = k0 * Math.sqrt(Math.max(0, n1 * n1 * sinTheta1 * sinTheta1 - n2 * n2));
+            return kappa;
+        }
+
+        function draw() {
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            const angleDeg = parseFloat(document.getElementById('incidentAngle').value);
+            const n1 = parseFloat(document.getElementById('n1').value);
+            const n2 = parseFloat(document.getElementById('n2').value);
+            const wavelength = 550e-9; // 绿光波长
+            
+            const theta1 = angleDeg * Math.PI / 180;
+            const theta2 = getRefractionAngle(theta1, n1, n2);
+            const criticalAngle = getCriticalAngle(n1, n2);
+            const isTotalReflection = theta2 === null;
+            
+            // 更新显示
+            document.getElementById('angleValue').textContent = angleDeg.toFixed(1) + '°';
+            document.getElementById('n1Value').textContent = n1.toFixed(2);
+            document.getElementById('n2Value').textContent = n2.toFixed(2);
+            
+            // 更新状态指示器
+            const statusContainer = document.getElementById('statusContainer');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            const criticalInfo = document.getElementById('criticalInfo');
+            
+            if (isTotalReflection) {
+                statusContainer.className = 'status-indicator status-tir';
+                statusIcon.textContent = '⚡';
+                statusText.textContent = '全反射！存在倏逝波';
+                if (criticalAngle !== null) {
+                    criticalInfo.style.display = 'block';
+                    document.getElementById('criticalAngle').textContent = (criticalAngle * 180 / Math.PI).toFixed(1) + '°';
+                }
+            } else if (n1 > n2 && theta1 >= criticalAngle * 0.9) {
+                statusContainer.className = 'status-indicator status-tir';
+                statusIcon.textContent = '⚠️';
+                statusText.textContent = '接近临界角';
+                if (criticalAngle !== null) {
+                    criticalInfo.style.display = 'block';
+                    document.getElementById('criticalAngle').textContent = (criticalAngle * 180 / Math.PI).toFixed(1) + '°';
+                }
+            } else {
+                statusContainer.className = 'status-indicator status-normal';
+                statusIcon.textContent = '✅';
+                statusText.textContent = '正常折射';
+                if (n1 > n2) {
+                    criticalInfo.style.display = 'block';
+                    document.getElementById('criticalAngle').textContent = (criticalAngle * 180 / Math.PI).toFixed(1) + '°';
+                } else {
+                    criticalInfo.style.display = 'none';
+                }
+            }
+            
+            // 清空画布（深色背景）
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, width, height);
+            
+            // 界面位置
+            const interfaceY = height * 0.55;
+            const centerX = width * 0.5;
+            
+            // 绘制界面
+            drawInterface(width, interfaceY, n1, n2);
+            
+            // 绘制法线
+            drawNormal(centerX, interfaceY, height);
+            
+            // 入射点
+            const incidentPoint = { x: centerX, y: interfaceY };
+            
+            // 计算光线
+            const lightSourceX = centerX - Math.sin(theta1) * height * 0.8;
+            const lightSourceY = interfaceY - Math.cos(theta1) * height * 0.8;
+            
+            // 反射光线
+            const reflectEndX = centerX + Math.sin(theta1) * height * 0.8;
+            const reflectEndY = interfaceY - Math.cos(theta1) * height * 0.8;
+            
+            // 绘制入射光线
+            drawLightRay(lightSourceX, lightSourceY, centerX, interfaceY, '#ffeb3b', 3, true);
+            
+            // 绘制反射光线
+            drawLightRay(centerX, interfaceY, reflectEndX, reflectEndY, '#ff9800', 2.5, false);
+            
+            // 折射光线或倏逝波
+            if (!isTotalReflection) {
+                // 正常折射
+                const refractEndX = centerX + Math.sin(theta2) * width * 0.6;
+                const refractEndY = interfaceY + Math.cos(theta2) * height * 0.6;
+                drawLightRay(centerX, interfaceY, refractEndX, refractEndY, '#4fc3f7', 3, false);
+                
+                // 折射角标注
+                drawAngleArc(centerX, interfaceY, 80, -Math.PI/2, theta2 + Math.PI/2, '#4fc3f7', 'θₜ');
+            } else {
+                // 全反射 - 绘制倏逝波
+                drawEvanescentWave(centerX, interfaceY, n1, n2, theta1, wavelength, width, height);
+            }
+            
+            // 入射角标注
+            drawAngleArc(centerX, interfaceY, 80, -Math.PI/2, -Math.PI/2 + theta1, '#ffeb3b', 'θᵢ');
+            
+            // 反射角标注
+            drawAngleArc(centerX, interfaceY, 70, -Math.PI/2, -Math.PI/2 - theta1, '#ff9800', 'θᵣ');
+            
+            // 标签
+            drawLabels(centerX, interfaceY, theta1, theta2, n1, n2, isTotalReflection, width, height);
+            
+            // 波前示意
+            drawWavefronts(lightSourceX, lightSourceY, centerX, interfaceY, theta1, wavelength);
+        }
+
+        function drawInterface(width, y, n1, n2) {
+            // 上方介质
+            const topGradient = ctx.createLinearGradient(0, 0, 0, y);
+            topGradient.addColorStop(0, `rgba(100, 149, 237, ${0.15 + n1 * 0.05})`);
+            topGradient.addColorStop(1, `rgba(100, 149, 237, ${0.25 + n1 * 0.05})`);
+            ctx.fillStyle = topGradient;
+            ctx.fillRect(0, 0, width, y);
+            
+            // 下方介质
+            const bottomGradient = ctx.createLinearGradient(0, y, 0, canvas.height);
+            bottomGradient.addColorStop(0, `rgba(138, 43, 226, ${0.2 + n2 * 0.08})`);
+            bottomGradient.addColorStop(1, `rgba(138, 43, 226, ${0.3 + n2 * 0.08})`);
+            ctx.fillStyle = bottomGradient;
+            ctx.fillRect(0, y, width, canvas.height - y);
+            
+            // 界面线
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // 界面光晕
+            const glowGradient = ctx.createLinearGradient(0, y - 2, 0, y + 2);
+            glowGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            glowGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+            glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, y - 3, width, 6);
+        }
+
+        function drawNormal(x, interfaceY, height) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.moveTo(x, interfaceY - 200);
+            ctx.lineTo(x, interfaceY + 200);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 法线标签
+            ctx.fillStyle = '#aaa';
+            ctx.font = '11px "Microsoft YaHei"';
+            ctx.textAlign = 'left';
+            ctx.fillText('法线', x + 8, interfaceY - 150);
+        }
+
+        function drawLightRay(x1, y1, x2, y2, color, lineWidth, isIncident) {
+            // 光线主体
+            const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+            if (isIncident) {
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
+            } else {
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                gradient.addColorStop(1, color);
+            }
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = lineWidth;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // 光线方向箭头
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            
+            drawArrow(midX, midY, angle, color);
+        }
+
+        function drawArrow(x, y, angle, color) {
+            const arrowSize = 10;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(
+                x - arrowSize * Math.cos(angle - Math.PI / 6),
+                y - arrowSize * Math.sin(angle - Math.PI / 6)
+            );
+            ctx.lineTo(
+                x - arrowSize * Math.cos(angle + Math.PI / 6),
+                y - arrowSize * Math.sin(angle + Math.PI / 6)
+            );
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawAngleArc(centerX, centerY, radius, startAngle, endAngle, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 2]);
+            ctx.beginPath();
+            
+            if (endAngle < startAngle) {
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle, true);
+            } else {
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 标签位置
+            const midAngle = (startAngle + endAngle) / 2;
+            const labelX = centerX + (radius + 25) * Math.cos(midAngle);
+            const labelY = centerY + (radius + 25) * Math.sin(midAngle);
+            
+            ctx.fillStyle = color;
+            ctx.font = 'bold 12px "Microsoft YaHei"';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, labelX, labelY);
+        }
+
+        function drawEvanescentWave(centerX, interfaceY, n1, n2, theta1, wavelength, width, height) {
+            const kappa = getEvanescentDecay(theta1, n1, n2, wavelength);
+            const penetrationDepth = 1 / kappa; // 穿透深度（米）
+            const pixelDepth = Math.min(penetrationDepth * 1e7, height * 0.35); // 缩放到像素
+            
+            // 绘制倏逝波衰减区域
+            const numLayers = 50;
+            for (let i = 0; i < numLayers; i++) {
+                const z = (i / numLayers) * pixelDepth;
+                const intensity = Math.exp(-z / (pixelDepth / 3));
+                const alpha = intensity * 0.8;
+                
+                // 倏逝波区域（横向传播）
+                const waveX = centerX + Math.sin(theta1) * z;
+                
+                ctx.fillStyle = `rgba(255, 100, 150, ${alpha})`;
+                
+                // 在界面下方绘制衰减的光斑
+                const spreadWidth = width * 0.8;
+                for (let px = centerX - spreadWidth/2; px < centerX + spreadWidth/2; px += 2) {
+                    const dx = px - waveX;
+                    const waveIntensity = intensity * Math.exp(-dx * dx / (spreadWidth * spreadWidth * 0.01));
+                    if (waveIntensity > 0.01) {
+                        ctx.fillStyle = `rgba(255, 100, 180, ${Math.min(waveIntensity, 0.6)})`;
+                        ctx.fillRect(px, interfaceY + z, 2, 2);
+                    }
+                }
+            }
+            
+            // 穿透深度标记
+            const markY = interfaceY + pixelDepth;
+            ctx.strokeStyle = 'rgba(255, 100, 150, 0.6)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(centerX + 30, markY);
+            ctx.lineTo(centerX - 30, markY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#ff6496';
+            ctx.font = '10px "Microsoft YaHei"';
+            ctx.textAlign = 'left';
+            ctx.fillText(`穿透深度 ≈ ${(penetrationDepth * 1e9).toFixed(0)} nm`, centerX + 35, markY + 4);
+            
+            // 倏逝波标签
+            ctx.fillStyle = '#ff6496';
+            ctx.font = 'bold 13px "Microsoft YaHei"';
+            ctx.textAlign = 'center';
+            ctx.fillText('倏逝波 (Evanescent Wave)', centerX, interfaceY + pixelDepth + 25);
+            
+            // 沿界面传播的波
+            const goosHanchenShift = 30; // Goos-Hänchen位移（像素）
+            
+            // 反射点偏移
+            const shiftX = centerX + goosHanchenShift;
+            
+            ctx.strokeStyle = 'rgba(255, 150, 100, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(centerX, interfaceY);
+            ctx.lineTo(shiftX, interfaceY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#ff9664';
+            ctx.font = '9px "Microsoft YaHei"';
+            ctx.textAlign = 'center';
+            ctx.fillText('Goos-Hänchen位移', (centerX + shiftX) / 2, interfaceY - 10);
+        }
+
+        function drawWavefronts(startX, startY, endX, endY, theta1, wavelength) {
+            const pixelWavelength = 20; // 波前间距（像素）
+            const numFronts = 8;
+            
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const perpX = -dy / dist;
+            const perpY = dx / dist;
+            
+            for (let i = 0; i < numFronts; i++) {
+                const t = (i + 0.5) / numFronts;
+                const cx = startX + dx * t;
+                const cy = startY + dy * t;
+                const alpha = 0.15 + 0.05 * i;
+                
+                ctx.strokeStyle = `rgba(255, 235, 59, ${alpha})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(cx - perpX * 15, cy - perpY * 15);
+                ctx.lineTo(cx + perpX * 15, cy + perpY * 15);
+                ctx.stroke();
+            }
+        }
+
+        function drawLabels(centerX, interfaceY, theta1, theta2, n1, n2, isTotalReflection, width, height) {
+            // 介质标签
+            ctx.fillStyle = '#cornflowerblue';
+            ctx.font = 'bold 14px "Microsoft YaHei"';
+            ctx.textAlign = 'right';
+            ctx.fillText(`介质1: n₁ = ${n1.toFixed(2)}`, width - 20, interfaceY - 20);
+            
+            ctx.fillStyle = '#blueviolet';
+            ctx.fillText(`介质2: n₂ = ${n2.toFixed(2)}`, width - 20, interfaceY + 25);
+            
+            // 入射光标签
+            ctx.fillStyle = '#ffeb3b';
+            ctx.font = 'bold 12px "Microsoft YaHei"';
+            ctx.textAlign = 'right';
+            ctx.fillText('入射光', centerX - 50, interfaceY - 180);
+            
+            // 反射光标签
+            ctx.fillStyle = '#ff9800';
+            ctx.fillText('反射光', centerX + 60, interfaceY - 180);
+            
+            // 折射光或全反射标签
+            if (!isTotalReflection) {
+                ctx.fillStyle = '#4fc3f7';
+                ctx.textAlign = 'left';
+                ctx.fillText('折射光', centerX + 60, interfaceY + 200);
+                
+                // 折射角值
+                const theta2Deg = theta2 * 180 / Math.PI;
+                ctx.fillText(`θₜ = ${theta2Deg.toFixed(1)}°`, centerX + 100, interfaceY + 100);
+            } else {
+                ctx.fillStyle = '#ff5252';
+                ctx.font = 'bold 14px "Microsoft YaHei"';
+                ctx.textAlign = 'center';
+                ctx.fillText('⚡ 全反射 ⚡', centerX + 120, interfaceY - 80);
+            }
+            
+            // 入射角值
+            const theta1Deg = theta1 * 180 / Math.PI;
+            ctx.fillStyle = '#ffeb3b';
+            ctx.font = '11px "Microsoft YaHei"';
+            ctx.textAlign = 'left';
+            ctx.fillText(`θᵢ = ${theta1Deg.toFixed(1)}°`, centerX + 60, interfaceY - 60);
+            
+            // 斯涅尔定律验证
+            if (!isTotalReflection) {
+                const sinTheta1 = Math.sin(theta1);
+                const sinTheta2 = Math.sin(theta2);
+                const product1 = n1 * sinTheta1;
+                const product2 = n2 * sinTheta2;
+                
+                ctx.fillStyle = '#aaa';
+                ctx.font = '10px "Microsoft YaHei"';
+                ctx.textAlign = 'right';
+                ctx.fillText(
+                    `n₁sinθᵢ = ${product1.toFixed(3)}`,
+                    width - 20,
+                    interfaceY + 45
+                );
+                ctx.fillText(
+                    `n₂sinθₜ = ${product2.toFixed(3)}`,
+                    width - 20,
+                    interfaceY + 60
+                );
+            }
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'refraction-total-internal-reflection.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function resetParameters() {
+            document.getElementById('incidentAngle').value = 45;
+            document.getElementById('n1').value = 1.0;
+            document.getElementById('n2').value = 1.5;
+            draw();
+        }
+
+        ['incidentAngle', 'n1', 'n2'].forEach(id => {
+            document.getElementById(id).addEventListener('input', draw);
+        });
+
+        draw();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+    </script>
+</body>
+</html>
