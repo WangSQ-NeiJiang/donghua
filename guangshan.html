@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>平面透射光栅 · 缺级演示 | 单缝衍射 + 多缝干涉</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #f5f5f0;
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      padding: 2rem;
+      max-width: 950px;
+      width: fit-content;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    h2 {
+      font-weight: 500;
+      color: #2c3e50;
+      letter-spacing: 2px;
+      margin-bottom: 0.75rem;
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h2 span {
+      background: #ecf0f1;
+      padding: 0.2rem 1rem;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #2c3e50;
+      letter-spacing: 0.5px;
+    }
+    canvas {
+      display: block;
+      border-radius: 24px;
+      background: white;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.05), 0 10px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      height: auto;
+      background: white;
+      margin: 0.5rem 0 1.2rem;
+    }
+    .control-panel {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2rem;
+      background: #f8f9fa;
+      padding: 1.5rem 2rem;
+      border-radius: 40px;
+      margin-top: 0.5rem;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-width: 180px;
+    }
+    .slider-group label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #2d3436;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .slider-group label span:first-child {
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .slider-group input[type="range"] {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      background: linear-gradient(to right, #74b9ff, #0984e3);
+      border-radius: 10px;
+      outline: none;
+      cursor: pointer;
+    }
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      border: 2px solid #0984e3;
+      transition: 0.1s;
+    }
+    .value-display {
+      background: white;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-weight: 600;
+      color: #2d3436;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      margin-left: 0.3rem;
+    }
+    .info-text {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.3rem;
+      width: 100%;
+      font-size: 0.85rem;
+      color: #636e72;
+      flex-wrap: wrap;
+    }
+    .warning-badge {
+      background: #ffeaa7;
+      color: #d63031;
+      padding: 0.15rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    hr {
+      border: none;
+      border-top: 1px dashed #b2bec3;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    button {
+      background: white;
+      border: 1px solid #dfe6e9;
+      padding: 0.5rem 1.2rem;
+      border-radius: 30px;
+      font-weight: 500;
+      color: #2d3436;
+      cursor: pointer;
+      transition: 0.2s;
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    button:hover {
+      background: #dfe6e9;
+      border-color: #b2bec3;
+    }
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #2d3436;
+    }
+    .legend span::before {
+      content: "●";
+      margin-right: 0.3rem;
+      font-size: 1.2rem;
+      vertical-align: middle;
+    }
+    .legend .single-dot::before { content: "●"; color: #e17055; }
+    .legend .multi-dot::before { content: "●"; color: #0984e3; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>
+    🔬 平面透射光栅
+    <span>缺级演示</span>
+  </h2>
+  <canvas id="gratingCanvas" width="850" height="420" aria-label="光栅衍射强度分布图"></canvas>
+  
+  <div class="control-panel">
+    <div class="slider-group">
+      <label>
+        <span>📏 缝宽 a</span>
+        <span id="aValue" class="value-display">1.20</span>
+      </label>
+      <input type="range" id="aSlider" min="0.4" max="2.8" value="1.2" step="0.01">
+      <div style="font-size:0.7rem; color:#636e72;">(单缝衍射因子)</div>
+    </div>
+    <div class="slider-group">
+      <label>
+        <span>📐 光栅常数 d</span>
+        <span id="dValue" class="value-display">3.60</span>
+      </label>
+      <input type="range" id="dSlider" min="1.2" max="5.6" value="3.6" step="0.01">
+      <div style="font-size:0.7rem; color:#636e72;">(d > a 且保证缺级可见)</div>
+    </div>
+    <div class="slider-group" style="min-width: 120px;">
+      <label>
+        <span>🔢 缝数 N</span>
+        <span id="nValue" class="value-display">5</span>
+      </label>
+      <input type="range" id="nSlider" min="2" max="10" value="5" step="1">
+    </div>
+    <button id="resetButton">↺ 重置典型值</button>
+  </div>
+  
+  <div class="info-text">
+    <div class="legend">
+      <span class="single-dot">单缝衍射包络</span>
+      <span class="multi-dot">多缝干涉 (归一化)</span>
+    </div>
+    <div id="missingOrderInfo" class="warning-badge">⚠️ 缺级: 第 ±3 级</div>
+  </div>
+  <div style="font-size:0.75rem; color:#636e72; margin-top:0.2rem;">
+    * 白色背景 · 红色虚线为单缝衍射强度轮廓 · 蓝色实线为光栅总强度 (包络受单缝调制)
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- 获取DOM元素 -----
+    const canvas = document.getElementById('gratingCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const aSlider = document.getElementById('aSlider');
+    const dSlider = document.getElementById('dSlider');
+    const nSlider = document.getElementById('nSlider');
+    
+    const aValueSpan = document.getElementById('aValue');
+    const dValueSpan = document.getElementById('dValue');
+    const nValueSpan = document.getElementById('nValue');
+    const missingOrderInfo = document.getElementById('missingOrderInfo');
+    
+    const resetBtn = document.getElementById('resetButton');
+    
+    // ----- 固定参数 -----
+    const wavelength = 0.55;      // 波长 (微米量级，相对单位，不影响缺级关系)
+    const canvasWidth = 850;
+    const canvasHeight = 420;
+    const plotLeft = 70;
+    const plotRight = canvasWidth - 40;
+    const plotTop = 40;
+    const plotBottom = canvasHeight - 50;
+    const plotWidth = plotRight - plotLeft;
+    const plotHeight = plotBottom - plotTop;
+    
+    // 角度范围 (弧度) 对应横坐标 sinθ 范围 [-0.9, 0.9] 保证合理
+    const sinThetaMin = -0.85;
+    const sinThetaMax = 0.85;
+    
+    // ----- 状态变量 -----
+    let a = 1.2;          // 缝宽
+    let d = 3.6;          // 光栅常数
+    let N = 5;            // 缝数
+    
+    // ----- 工具函数：将 sinθ 映射到 canvas x 坐标 -----
+    function sinThetaToX(sinTheta) {
+      return plotLeft + (sinTheta - sinThetaMin) / (sinThetaMax - sinThetaMin) * plotWidth;
+    }
+    
+    function xToSinTheta(x) {
+      return sinThetaMin + (x - plotLeft) / plotWidth * (sinThetaMax - sinThetaMin);
+    }
+    
+    // ----- 强度计算：单缝衍射因子 (sinc²) -----
+    function singleSlitIntensity(sinTheta, aVal) {
+      if (aVal <= 0) return 1.0;
+      let beta = Math.PI * aVal * sinTheta / wavelength;
+      // 避免除以零
+      if (Math.abs(beta) < 1e-12) return 1.0;
+      let sinc = Math.sin(beta) / beta;
+      return sinc * sinc;
+    }
+    
+    // ----- 多缝干涉因子 (归一化到0~1之间便于绘制，实际幅度变化很大) -----
+    function multiSlitInterference(sinTheta, dVal, nVal) {
+      if (nVal <= 1) return 1.0; // 单缝情况，但N>=2
+      let delta = (2 * Math.PI * dVal * sinTheta) / wavelength;
+      // 避免分母为零：当sin(delta/2)接近0时使用极限 N^2
+      let halfDelta = delta / 2;
+      if (Math.abs(Math.sin(halfDelta)) < 1e-12) {
+        return nVal * nVal; // 主极大位置
+      }
+      let numerator = Math.sin(nVal * halfDelta);
+      let denominator = Math.sin(halfDelta);
+      return (numerator * numerator) / (denominator * denominator);
+    }
+    
+    // ----- 总强度 = 单缝衍射 × 多缝干涉 (相对强度) -----
+    function totalIntensity(sinTheta, aVal, dVal, nVal) {
+      let single = singleSlitIntensity(sinTheta, aVal);
+      let multi = multiSlitInterference(sinTheta, dVal, nVal);
+      return single * multi;
+    }
+    
+    // ----- 查找缺级位置 (d * sinθ = m * λ, 且 a * sinθ = p * λ, p为整数, 即d/a为有理数时缺级) -----
+    function findMissingOrders(aVal, dVal) {
+      if (aVal <= 0 || dVal <= 0) return [];
+      let ratio = dVal / aVal;
+      let missing = [];
+      // 在可见范围内搜索sinθ ∈ [-0.85, 0.85]
+      for (let m = -15; m <= 15; m++) {
+        let sinTheta = (m * wavelength) / dVal;
+        if (sinTheta < sinThetaMin || sinTheta > sinThetaMax) continue;
+        // 检查该干涉主极大是否落在单缝衍射零点上： a * sinθ = p * λ (p非零整数)
+        let aSin = aVal * sinTheta;
+        let p = aSin / wavelength;
+        // 判断p是否接近整数 (容差1e-3) 且 p != 0
+        if (Math.abs(p - Math.round(p)) < 0.001 && Math.abs(Math.round(p)) > 0.1) {
+          missing.push({ order: m, sinTheta: sinTheta });
+        }
+      }
+      return missing;
+    }
+    
+    // ----- 更新UI与缺级提示 -----
+    function updateUIAndInfo() {
+      aValueSpan.textContent = a.toFixed(2);
+      dValueSpan.textContent = d.toFixed(2);
+      nValueSpan.textContent = N;
+      
+      let missing = findMissingOrders(a, d);
+      if (missing.length === 0) {
+        missingOrderInfo.textContent = "✅ 当前无明显缺级 (d/a 非整数比)";
+        missingOrderInfo.style.background = "#dfe6e9";
+        missingOrderInfo.style.color = "#2d3436";
+      } else {
+        let orders = missing.map(m => (m.order > 0 ? '+' + m.order : m.order)).join(', ');
+        missingOrderInfo.textContent = `⚠️ 缺级: 第 ${orders} 级`;
+        missingOrderInfo.style.background = "#ffeaa7";
+        missingOrderInfo.style.color = "#d63031";
+      }
+    }
+    
+    // ----- 绘制整个图形 (白色背景) -----
+    function draw() {
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      
+      // 白色背景 (canvas默认白色，再绘制一层确保)
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      
+      // 绘制坐标轴区域背景 (极浅灰辅助)
+      ctx.fillStyle = "#fafafa";
+      ctx.fillRect(plotLeft, plotTop, plotWidth, plotHeight);
+      
+      // 绘制坐标轴线
+      ctx.save();
+      ctx.strokeStyle = "#b2bec3";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      // 横轴 (sinθ = 0 线)
+      let yZero = plotTop + plotHeight/2;  // 强度0线位于中央偏下？我们希望强度分布垂直居中，基线在底部更好看。
+      // 重新定义：强度范围从0到某个最大值，将强度映射到y坐标 (plotBottom 为0强度, plotTop 为最大强度)
+      // 这样图形充满区域。
+      const yBase = plotBottom;      // 强度0
+      const yMax = plotTop + 15;     // 强度最大值位置 (留一点边距)
+      
+      // 横轴 (sinθ轴) 放在底部
+      ctx.strokeStyle = "#636e72";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(plotLeft, yBase);
+      ctx.lineTo(plotRight, yBase);
+      ctx.stroke();
+      
+      // 纵轴 (强度轴) 左侧
+      ctx.beginPath();
+      ctx.moveTo(plotLeft, plotTop-5);
+      ctx.lineTo(plotLeft, yBase);
+      ctx.stroke();
+      
+      // 标注刻度
+      ctx.fillStyle = "#2d3436";
+      ctx.font = "12px 'Segoe UI', sans-serif";
+      ctx.textAlign = "center";
+      // sinθ 刻度
+      let tickValues = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8];
+      tickValues.forEach(val => {
+        let x = sinThetaToX(val);
+        ctx.beginPath();
+        ctx.moveTo(x, yBase);
+        ctx.lineTo(x, yBase+5);
+        ctx.strokeStyle = "#636e72";
+        ctx.stroke();
+        ctx.fillText(val.toFixed(1), x, yBase+18);
+      });
+      ctx.fillText("sinθ", plotRight-15, yBase+18);
+      
+      // 纵轴标注 "强度"
+      ctx.save();
+      ctx.translate(plotLeft-28, plotTop + plotHeight/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#2d3436";
+      ctx.fillText("相对强度", 0, 0);
+      ctx.restore();
+      
+      // ----- 计算强度数据并绘制 -----
+      // 为了提高性能且平滑，沿x轴逐像素计算
+      const pointsCount = canvasWidth; 
+      const singleData = new Array(pointsCount);
+      const totalData = new Array(pointsCount);
+      
+      // 先找出总强度的最大值用于归一化显示 (使包络可见且多缝峰值合理)
+      let maxTotal = 0;
+      // 同时记录单缝最大值
+      let maxSingle = 0;
+      
+      // 预计算所有点
+      for (let i = 0; i < pointsCount; i++) {
+        let x = i; // 像素坐标
+        if (x < plotLeft || x > plotRight) {
+          singleData[i] = null;
+          totalData[i] = null;
+          continue;
+        }
+        let sinTheta = xToSinTheta(x);
+        let sVal = singleSlitIntensity(sinTheta, a);
+        let tVal = totalIntensity(sinTheta, a, d, N);
+        singleData[i] = sVal;
+        totalData[i] = tVal;
+        if (sVal > maxSingle) maxSingle = sVal;
+        if (tVal > maxTotal) maxTotal = tVal;
+      }
+      
+      // 防止除以零
+      if (maxTotal < 1e-6) maxTotal = 1;
+      if (maxSingle < 1e-6) maxSingle = 1;
+      
+      // 绘制单缝衍射包络 (红色虚线)
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = "#e17055";
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([6, 4]);
+      let firstSinglePoint = true;
+      
+      for (let i = plotLeft; i <= plotRight; i++) {
+        let sVal = singleData[i];
+        if (sVal === null) continue;
+        // 映射强度到y: 强度范围[0, maxSingle] -> y从yBase到yMax
+        let y = yBase - (sVal / maxSingle) * (yBase - yMax);
+        if (firstSinglePoint) {
+          ctx.moveTo(i, y);
+          firstSinglePoint = false;
+        } else {
+          ctx.lineTo(i, y);
+        }
+      }
+      ctx.stroke();
+      ctx.setLineDash([]); // 重置
+      
+      // 绘制多缝干涉总强度 (蓝色实线)
+      ctx.beginPath();
+      ctx.strokeStyle = "#0984e3";
+      ctx.lineWidth = 2.4;
+      let firstTotalPoint = true;
+      
+      for (let i = plotLeft; i <= plotRight; i++) {
+        let tVal = totalData[i];
+        if (tVal === null) continue;
+        // 归一化使用总强度的最大值，但注意主极大可能非常高，我们使用maxTotal
+        let y = yBase - (tVal / maxTotal) * (yBase - yMax);
+        if (firstTotalPoint) {
+          ctx.moveTo(i, y);
+          firstTotalPoint = false;
+        } else {
+          ctx.lineTo(i, y);
+        }
+      }
+      ctx.stroke();
+      
+      // 标记缺级位置 (红色箭头或虚线)
+      let missing = findMissingOrders(a, d);
+      ctx.save();
+      missing.forEach(item => {
+        let xPos = sinThetaToX(item.sinTheta);
+        if (xPos < plotLeft || xPos > plotRight) return;
+        // 绘制垂直虚线指示缺级
+        ctx.beginPath();
+        ctx.strokeStyle = "#d63031";
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+        ctx.moveTo(xPos, plotTop-2);
+        ctx.lineTo(xPos, yBase);
+        ctx.stroke();
+        // 文字标注
+        ctx.fillStyle = "#d63031";
+        ctx.font = "bold 11px 'Segoe UI'";
+        ctx.textAlign = "center";
+        ctx.fillText(`缺${item.order>0?'+'+item.order:item.order}`, xPos, plotTop-8);
+      });
+      ctx.restore();
+      
+      // 绘制图例 (在右上角区域)
+      ctx.save();
+      ctx.fillStyle = "#2d3436";
+      ctx.font = "12px 'Segoe UI'";
+      ctx.textAlign = "left";
+      ctx.fillText("━ 单缝衍射包络", plotRight-190, plotTop+25);
+      ctx.fillStyle = "#e17055";
+      ctx.fillRect(plotRight-215, plotTop+19, 14, 3);
+      ctx.fillStyle = "#0984e3";
+      ctx.fillRect(plotRight-215, plotTop+35, 14, 3);
+      ctx.fillStyle = "#2d3436";
+      ctx.fillText("━ 光栅总强度", plotRight-190, plotTop+42);
+      ctx.restore();
+      
+      // 在左下角显示当前参数
+      ctx.save();
+      ctx.font = "11px 'Segoe UI'";
+      ctx.fillStyle = "#636e72";
+      ctx.fillText(`a=${a.toFixed(2)}  d=${d.toFixed(2)}  N=${N}  λ=0.55`, plotLeft+8, plotTop-8);
+      ctx.restore();
+      
+      updateUIAndInfo();
+    }
+    
+    // ----- 事件监听 -----
+    function handleAChange(e) {
+      a = parseFloat(e.target.value);
+      if (a < 0.4) a = 0.4;
+      if (a >= d) {
+        // 保证 d > a，否则调整d
+        d = a + 0.15;
+        dSlider.value = d;
+        dValueSpan.textContent = d.toFixed(2);
+      }
+      draw();
+    }
+    
+    function handleDChange(e) {
+      d = parseFloat(e.target.value);
+      if (d <= a) {
+        a = d - 0.15;
+        if (a < 0.4) a = 0.4;
+        aSlider.value = a;
+        aValueSpan.textContent = a.toFixed(2);
+      }
+      draw();
+    }
+    
+    function handleNChange(e) {
+      N = parseInt(e.target.value, 10);
+      draw();
+    }
+    
+    function resetToTypical() {
+      a = 1.2;
+      d = 3.6;
+      N = 5;
+      aSlider.value = a;
+      dSlider.value = d;
+      nSlider.value = N;
+      draw();
+    }
+    
+    // 绑定事件
+    aSlider.addEventListener('input', handleAChange);
+    dSlider.addEventListener('input', handleDChange);
+    nSlider.addEventListener('input', handleNChange);
+    resetBtn.addEventListener('click', resetToTypical);
+    
+    // 窗口大小自适应不变 (canvas固定尺寸)
+    window.addEventListener('resize', () => {
+      draw();
+    });
+    
+    // 初始绘制
+    draw();
+    
+    // 额外保证d>a约束
+    function enforceConstraints() {
+      if (d <= a) {
+        d = a + 0.2;
+        dSlider.value = d;
+        dValueSpan.textContent = d.toFixed(2);
+        draw();
+      }
+    }
+    
+    // 监听变化后检查
+    aSlider.addEventListener('change', enforceConstraints);
+    dSlider.addEventListener('change', () => {
+      if (d <= a) {
+        a = d - 0.2;
+        if (a < 0.4) a = 0.4;
+        aSlider.value = a;
+        aValueSpan.textContent = a.toFixed(2);
+        draw();
+      }
+    });
+    
+  })();
+</script>
+</body>
+</html>
