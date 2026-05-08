@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>李萨如图形 · 轴上简谐振动投影</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 2rem;
+      padding: 2rem 2rem 2.2rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: fit-content;
+      max-width: 880px;
+    }
+
+    canvas#mainCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #ffffff;
+      border-radius: 1.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      aspect-ratio: 800 / 620;
+      max-width: 800px;
+    }
+
+    .control-row {
+      width: 100%;
+      margin-top: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .control-panel {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+      color: #333;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f8f9fb;
+      padding: 1rem 1.4rem;
+      border-radius: 1.5rem;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+      min-width: 140px;
+      flex: 1 1 auto;
+    }
+
+    .slider-group label {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .slider-group span.value-display {
+      background: #ffffff;
+      padding: 0.2rem 0.8rem;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #e67e22;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+      letter-spacing: 0.3px;
+      min-width: 55px;
+      text-align: center;
+      border: 1px solid #eee;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      max-width: 180px;
+      height: 5px;
+      -webkit-appearance: none;
+      background: linear-gradient(to right, #5b6abf, #9b6dff);
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      border: 2px solid #6c5ce7;
+      transition: 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      background: #f0e6ff;
+    }
+
+    .info-text {
+      color: #777;
+      font-size: 0.8rem;
+      margin-top: 0.2rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .badge {
+      background: #f0f0f0;
+      padding: 0.1rem 0.6rem;
+      border-radius: 20px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.75rem;
+    }
+
+    .legend {
+      margin-top: 0.6rem;
+      color: #888;
+      font-size: 0.75rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-pause {
+      background: #ffffff;
+      border: 2px solid #5b6abf;
+      color: #5b6abf;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.6rem 1.4rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(91, 106, 191, 0.12);
+      min-width: 100px;
+      justify-content: center;
+    }
+
+    .btn-pause:hover {
+      background: #5b6abf;
+      color: white;
+      border-color: #5b6abf;
+      box-shadow: 0 6px 16px rgba(91, 106, 191, 0.25);
+    }
+
+    .btn-pause.paused {
+      background: #f8f9fb;
+      border-color: #aaa;
+      color: #666;
+    }
+
+    .btn-pause.paused:hover {
+      background: #e9ecef;
+      border-color: #888;
+      color: #444;
+    }
+
+    @media (max-width: 700px) {
+      .card {
+        padding: 1.2rem 1rem 1.5rem;
+      }
+      .control-panel {
+        gap: 0.8rem;
+      }
+      .slider-group {
+        padding: 0.7rem 0.9rem;
+        min-width: 110px;
+      }
+      .legend {
+        gap: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <canvas id="mainCanvas" width="800" height="620" aria-label="李萨如图形整合视图：合成曲线和轴上振动波形"></canvas>
+  
+  <div class="control-row">
+    <div class="control-panel">
+      <!-- X轴频率 -->
+      <div class="slider-group">
+        <label>
+          <span style="font-size:1.1rem;">📊</span> X轴频率 <span style="font-weight:300;">f<sub>x</sub></span>
+        </label>
+        <span class="value-display" id="fxValue">3.0</span>
+        <input type="range" id="fxSlider" min="1" max="9" value="3" step="0.1">
+        <div class="info-text"><span class="badge">ω<sub>x</sub></span></div>
+      </div>
+
+      <!-- Y轴频率 -->
+      <div class="slider-group">
+        <label>
+          <span style="font-size:1.1rem;">📈</span> Y轴频率 <span style="font-weight:300;">f<sub>y</sub></span>
+        </label>
+        <span class="value-display" id="fyValue">2.0</span>
+        <input type="range" id="fySlider" min="1" max="9" value="2" step="0.1">
+        <div class="info-text"><span class="badge">ω<sub>y</sub></span></div>
+      </div>
+
+      <!-- 相位差 -->
+      <div class="slider-group">
+        <label>
+          <span style="font-size:1.1rem;">🌀</span> 相位差 <span style="font-weight:300;">φ</span>
+        </label>
+        <span class="value-display" id="phaseValue">0.00 rad</span>
+        <input type="range" id="phaseSlider" min="0" max="6.2832" value="0" step="0.01">
+        <div class="info-text">
+          <span class="badge" id="phaseDegrees">0.0°</span>
+          <span style="font-size:0.7rem;">0 ~ 2π</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 暂停按钮 -->
+    <button id="pauseButton" class="btn-pause" title="暂停/播放动画">
+      <span id="pauseIcon">⏸️</span> <span id="pauseText">暂停</span>
+    </button>
+  </div>
+
+  <div class="legend">
+    <span>🟣 紫色轨迹：李萨如合成曲线</span>
+    <span>🔵 蓝色：X轴振动投影</span>
+    <span>🟠 橙色：Y轴振动投影</span>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- 获取DOM元素 -----
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 滑块
+    const fxSlider = document.getElementById('fxSlider');
+    const fySlider = document.getElementById('fySlider');
+    const phaseSlider = document.getElementById('phaseSlider');
+
+    // 显示数值
+    const fxValueSpan = document.getElementById('fxValue');
+    const fyValueSpan = document.getElementById('fyValue');
+    const phaseValueSpan = document.getElementById('phaseValue');
+    const phaseDegreesSpan = document.getElementById('phaseDegrees');
+
+    // 暂停按钮
+    const pauseButton = document.getElementById('pauseButton');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const pauseText = document.getElementById('pauseText');
+
+    // ----- 画布布局参数 -----
+    const W = canvas.width;   // 800
+    const H = canvas.height;  // 620
+
+    // 李萨如图形区域 (正方形)
+    const lissaLeft = 70;
+    const lissaTop = 50;
+    const lissaSize = 440;
+    const lissaCenterX = lissaLeft + lissaSize / 2;
+    const lissaCenterY = lissaTop + lissaSize / 2;
+    const lissaAmpX = lissaSize * 0.4;
+    const lissaAmpY = lissaSize * 0.4;
+
+    // X轴振动波形 - 放在李萨如图形的下方
+    const waveXBottomLeft = lissaLeft;
+    const waveXBottomTop = lissaTop + lissaSize + 15;
+    const waveXBottomWidth = lissaSize;
+    const waveXBottomHeight = 60;
+    const waveXBottomMidY = waveXBottomTop + waveXBottomHeight / 2;
+    const waveXBottomAmp = waveXBottomHeight * 0.38;
+
+    // Y轴振动波形 - 放在李萨如图形的左侧
+    const waveYLeftLeft = lissaLeft - 65;
+    const waveYLeftTop = lissaTop;
+    const waveYLeftWidth = 60;
+    const waveYLeftHeight = lissaSize;
+    const waveYLeftMidX = waveYLeftLeft + waveYLeftWidth / 2;
+    const waveYLeftAmp = waveYLeftWidth * 0.38;
+
+    // 轴上振动光点轨迹
+    const axisTrailLength = 150;
+    let xAxisTrail = [];
+    let yAxisTrail = [];
+
+    // ----- 动画状态 -----
+    let isPaused = false;
+    let animationId = null;
+    let globalTime = 0;
+    const timeStep = 0.025;
+    const maxTrailPoints = 3000;
+    let trailPoints = [];
+
+    // 波形历史
+    const waveHistoryMax = 400;
+    let waveXHistory = [];
+    let waveYHistory = [];
+
+    // 当前参数
+    let currentFx = parseFloat(fxSlider.value);
+    let currentFy = parseFloat(fySlider.value);
+    let currentPhase = parseFloat(phaseSlider.value);
+
+    // ----- 更新暂停按钮UI -----
+    function updatePauseButton() {
+      if (isPaused) {
+        pauseIcon.textContent = '▶️';
+        pauseText.textContent = '播放';
+        pauseButton.classList.add('paused');
+      } else {
+        pauseIcon.textContent = '⏸️';
+        pauseText.textContent = '暂停';
+        pauseButton.classList.remove('paused');
+      }
+    }
+
+    // ----- 更新显示数值 -----
+    function updateDisplayValues() {
+      fxValueSpan.textContent = currentFx.toFixed(1);
+      fyValueSpan.textContent = currentFy.toFixed(1);
+      phaseValueSpan.textContent = currentPhase.toFixed(2) + ' rad';
+      const degrees = (currentPhase * 180 / Math.PI) % 360;
+      phaseDegreesSpan.textContent = degrees.toFixed(1) + '°';
+    }
+
+    // ----- 重置所有数据 -----
+    function resetAll() {
+      trailPoints = [];
+      waveXHistory = [];
+      waveYHistory = [];
+      xAxisTrail = [];
+      yAxisTrail = [];
+      globalTime = 0;
+    }
+
+    // ----- 同步参数 -----
+    function syncParametersFromSliders() {
+      const newFx = parseFloat(fxSlider.value);
+      const newFy = parseFloat(fySlider.value);
+      const newPhase = parseFloat(phaseSlider.value);
+
+      if (newFx !== currentFx || newFy !== currentFy || Math.abs(newPhase - currentPhase) > 0.0001) {
+        currentFx = newFx;
+        currentFy = newFy;
+        currentPhase = newPhase;
+        resetAll();
+      }
+      updateDisplayValues();
+    }
+
+    // ----- 计算李萨如点 -----
+    function computeLissajousPoint(t) {
+      const angleX = currentFx * t;
+      const angleY = currentFy * t + currentPhase;
+      return {
+        x: Math.sin(angleX),
+        y: Math.sin(angleY)
+      };
+    }
+
+    // ----- 添加数据点 -----
+    function addDataPoint() {
+      const point = computeLissajousPoint(globalTime);
+      
+      // 李萨如轨迹
+      const canvasX = lissaCenterX + point.x * lissaAmpX;
+      const canvasY = lissaCenterY - point.y * lissaAmpY;
+      trailPoints.push({ x: canvasX, y: canvasY });
+      while (trailPoints.length > maxTrailPoints) {
+        trailPoints.shift();
+      }
+
+      // X轴振动点
+      xAxisTrail.push({
+        x: lissaCenterX + point.x * lissaAmpX,
+        y: lissaCenterY
+      });
+      while (xAxisTrail.length > axisTrailLength) {
+        xAxisTrail.shift();
+      }
+
+      // Y轴振动点
+      yAxisTrail.push({
+        x: lissaCenterX,
+        y: lissaCenterY - point.y * lissaAmpY
+      });
+      while (yAxisTrail.length > axisTrailLength) {
+        yAxisTrail.shift();
+      }
+
+      // 波形历史
+      waveXHistory.push(point.x);
+      waveYHistory.push(point.y);
+      while (waveXHistory.length > waveHistoryMax) {
+        waveXHistory.shift();
+      }
+      while (waveYHistory.length > waveHistoryMax) {
+        waveYHistory.shift();
+      }
+    }
+
+    // ----- 绘制整个画布 -----
+    function drawAll() {
+      // 白色背景
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
+
+      // 绘制标题
+      drawTitle();
+
+      // 绘制李萨如图形 (包含轴上振动)
+      drawLissajousWithAxisVibration();
+
+      // 绘制下方X轴振动波形
+      drawWaveXBottom();
+
+      // 绘制左侧Y轴振动波形
+      drawWaveYLeft();
+    }
+
+    // ----- 标题 -----
+    function drawTitle() {
+      ctx.save();
+      ctx.font = 'bold 15px "Segoe UI", Roboto, sans-serif';
+      ctx.fillStyle = '#444';
+      ctx.fillText('李萨如图形 · 简谐振动投影', lissaLeft, 28);
+      ctx.restore();
+    }
+
+    // ----- 绘制李萨如图形及轴上振动 -----
+    function drawLissajousWithAxisVibration() {
+      ctx.save();
+      
+      // 裁剪区域：李萨如方框
+      ctx.beginPath();
+      ctx.rect(lissaLeft, lissaTop, lissaSize, lissaSize);
+      ctx.clip();
+
+      // 背景 (白色)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(lissaLeft, lissaTop, lissaSize, lissaSize);
+
+      // 网格
+      ctx.strokeStyle = '#e8e8e8';
+      ctx.lineWidth = 0.5;
+      const gridStep = 40;
+      for (let x = lissaLeft; x <= lissaLeft + lissaSize; x += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(x, lissaTop);
+        ctx.lineTo(x, lissaTop + lissaSize);
+        ctx.stroke();
+      }
+      for (let y = lissaTop; y <= lissaTop + lissaSize; y += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(lissaLeft, y);
+        ctx.lineTo(lissaLeft + lissaSize, y);
+        ctx.stroke();
+      }
+
+      // 坐标轴 (加粗)
+      ctx.strokeStyle = '#bbb';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(lissaLeft, lissaCenterY);
+      ctx.lineTo(lissaLeft + lissaSize, lissaCenterY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(lissaCenterX, lissaTop);
+      ctx.lineTo(lissaCenterX, lissaTop + lissaSize);
+      ctx.stroke();
+
+      // 参考虚线圆
+      ctx.beginPath();
+      ctx.arc(lissaCenterX, lissaCenterY, lissaAmpX, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 0.7;
+      ctx.setLineDash([6, 8]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // ----- X轴振动投影 (蓝色光点) -----
+      if (xAxisTrail.length >= 2) {
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        
+        for (let i = 0; i < xAxisTrail.length - 1; i++) {
+          const p1 = xAxisTrail[i];
+          const p2 = xAxisTrail[i + 1];
+          const progress = i / xAxisTrail.length;
+          const alpha = 0.25 + progress * 0.7;
+          ctx.strokeStyle = `rgba(70, 130, 230, ${alpha})`;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+
+        if (xAxisTrail.length > 0) {
+          const lastX = xAxisTrail[xAxisTrail.length - 1];
+          ctx.shadowColor = 'rgba(70, 130, 230, 0.6)';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(lastX.x, lastX.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = '#4a90e2';
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // ----- Y轴振动投影 (橙色光点) -----
+      if (yAxisTrail.length >= 2) {
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        
+        for (let i = 0; i < yAxisTrail.length - 1; i++) {
+          const p1 = yAxisTrail[i];
+          const p2 = yAxisTrail[i + 1];
+          const progress = i / yAxisTrail.length;
+          const alpha = 0.25 + progress * 0.7;
+          ctx.strokeStyle = `rgba(235, 130, 50, ${alpha})`;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+
+        if (yAxisTrail.length > 0) {
+          const lastY = yAxisTrail[yAxisTrail.length - 1];
+          ctx.shadowColor = 'rgba(235, 130, 50, 0.6)';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(lastY.x, lastY.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = '#e88530';
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // 虚线连接：轴振动点 -> 合成点
+      if (xAxisTrail.length > 0 && yAxisTrail.length > 0 && trailPoints.length > 0) {
+        const lastX = xAxisTrail[xAxisTrail.length - 1];
+        const lastY = yAxisTrail[yAxisTrail.length - 1];
+        const lastLissa = trailPoints[trailPoints.length - 1];
+
+        ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 5]);
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX.x, lastX.y);
+        ctx.lineTo(lastLissa.x, lastLissa.y);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(lastY.x, lastY.y);
+        ctx.lineTo(lastLissa.x, lastLissa.y);
+        ctx.stroke();
+        
+        ctx.setLineDash([]);
+      }
+
+      // ----- 李萨如合成轨迹 -----
+      if (trailPoints.length >= 2) {
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+
+        for (let i = 0; i < trailPoints.length - 1; i++) {
+          const p1 = trailPoints[i];
+          const p2 = trailPoints[i + 1];
+          const progress = i / (trailPoints.length - 1);
+          const r = Math.floor(130 + progress * 100);
+          const g = Math.floor(80 + progress * 60);
+          const b = Math.floor(200 - progress * 80);
+          ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      }
+
+      // 当前合成点高亮
+      if (trailPoints.length > 0) {
+        const last = trailPoints[trailPoints.length - 1];
+        ctx.shadowColor = 'rgba(180, 100, 220, 0.6)';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(last.x, last.y, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = '#8b5cf6';
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.restore();
+
+      // 绘制方框边框
+      ctx.save();
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(lissaLeft, lissaTop, lissaSize, lissaSize);
+      ctx.restore();
+    }
+
+    // ----- 下方X轴振动波形 -----
+    function drawWaveXBottom() {
+      ctx.save();
+      
+      // 区域背景
+      ctx.fillStyle = '#fafbfc';
+      ctx.fillRect(waveXBottomLeft, waveXBottomTop, waveXBottomWidth, waveXBottomHeight);
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(waveXBottomLeft, waveXBottomTop, waveXBottomWidth, waveXBottomHeight);
+
+      // 标签
+      ctx.font = 'bold 10px "Segoe UI", Roboto, sans-serif';
+      ctx.fillStyle = '#4a90e2';
+      ctx.fillText('X轴振动 x(t) = sin(fx·t)', waveXBottomLeft + 8, waveXBottomTop + 14);
+
+      // 零线
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(waveXBottomLeft, waveXBottomMidY);
+      ctx.lineTo(waveXBottomLeft + waveXBottomWidth, waveXBottomMidY);
+      ctx.stroke();
+
+      if (waveXHistory.length < 2) {
+        ctx.restore();
+        return;
+      }
+
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#4a90e2';
+      ctx.beginPath();
+
+      const stepX = waveXBottomWidth / (waveHistoryMax - 1);
+      const startIdx = Math.max(0, waveXHistory.length - Math.floor(waveXBottomWidth / stepX));
+      const visible = waveXHistory.slice(startIdx);
+      
+      for (let i = 0; i < visible.length; i++) {
+        const x = waveXBottomLeft + i * stepX;
+        const y = waveXBottomMidY - visible[i] * waveXBottomAmp;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // 当前点
+      if (visible.length > 0) {
+        const lastX = waveXBottomLeft + (visible.length - 1) * stepX;
+        const lastY = waveXBottomMidY - visible[visible.length - 1] * waveXBottomAmp;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 3, 0, 2 * Math.PI);
+        ctx.fillStyle = '#4a90e2';
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // ----- 左侧Y轴振动波形 (垂直方向) -----
+    function drawWaveYLeft() {
+      ctx.save();
+      
+      // 区域背景
+      ctx.fillStyle = '#fafbfc';
+      ctx.fillRect(waveYLeftLeft, waveYLeftTop, waveYLeftWidth, waveYLeftHeight);
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(waveYLeftLeft, waveYLeftTop, waveYLeftWidth, waveYLeftHeight);
+
+      // 标签 (竖排)
+      ctx.font = 'bold 10px "Segoe UI", Roboto, sans-serif';
+      ctx.fillStyle = '#e88530';
+      ctx.save();
+      ctx.translate(waveYLeftLeft + 10, waveYLeftTop + waveYLeftHeight - 10);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Y轴振动 y(t) = sin(fy·t + φ)', 0, 0);
+      ctx.restore();
+
+      // 零线 (垂直线)
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(waveYLeftMidX, waveYLeftTop);
+      ctx.lineTo(waveYLeftMidX, waveYLeftTop + waveYLeftHeight);
+      ctx.stroke();
+
+      if (waveYHistory.length < 2) {
+        ctx.restore();
+        return;
+      }
+
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#e88530';
+      ctx.beginPath();
+
+      const stepY = waveYLeftHeight / (waveHistoryMax - 1);
+      const startIdx = Math.max(0, waveYHistory.length - Math.floor(waveYLeftHeight / stepY));
+      const visible = waveYHistory.slice(startIdx);
+      
+      for (let i = 0; i < visible.length; i++) {
+        const y = waveYLeftTop + i * stepY;
+        // Y轴波形：正值向右偏移
+        const x = waveYLeftMidX + visible[i] * waveYLeftAmp;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // 当前点
+      if (visible.length > 0) {
+        const lastY = waveYLeftTop + (visible.length - 1) * stepY;
+        const lastX = waveYLeftMidX + visible[visible.length - 1] * waveYLeftAmp;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 3, 0, 2 * Math.PI);
+        ctx.fillStyle = '#e88530';
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // ----- 动画循环 -----
+    function animationLoop() {
+      if (!isPaused) {
+        syncParametersFromSliders();
+
+        globalTime += timeStep;
+        if (globalTime > 300) {
+          globalTime = 0;
+          trailPoints = [];
+          waveXHistory = [];
+          waveYHistory = [];
+          xAxisTrail = [];
+          yAxisTrail = [];
+        }
+
+        addDataPoint();
+      }
+      
+      drawAll();
+      animationId = requestAnimationFrame(animationLoop);
+    }
+
+    // ----- 暂停按钮事件 -----
+    function togglePause() {
+      isPaused = !isPaused;
+      updatePauseButton();
+    }
+
+    // ----- 事件绑定 -----
+    function bindEvents() {
+      fxSlider.addEventListener('input', () => {
+        fxValueSpan.textContent = parseFloat(fxSlider.value).toFixed(1);
+      });
+      fySlider.addEventListener('input', () => {
+        fyValueSpan.textContent = parseFloat(fySlider.value).toFixed(1);
+      });
+      phaseSlider.addEventListener('input', () => {
+        const phase = parseFloat(phaseSlider.value);
+        phaseValueSpan.textContent = phase.toFixed(2) + ' rad';
+        phaseDegreesSpan.textContent = ((phase * 180 / Math.PI) % 360).toFixed(1) + '°';
+      });
+      fxSlider.addEventListener('change', syncParametersFromSliders);
+      fySlider.addEventListener('change', syncParametersFromSliders);
+      phaseSlider.addEventListener('change', syncParametersFromSliders);
+
+      pauseButton.addEventListener('click', togglePause);
+    }
+
+    function startAnimation() {
+      if (animationId) cancelAnimationFrame(animationId);
+      resetAll();
+      syncParametersFromSliders();
+      updatePauseButton();
+      animationLoop();
+    }
+
+    window.addEventListener('beforeunload', () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+
+    bindEvents();
+    startAnimation();
+  })();
+</script>
+</body>
+</html>
